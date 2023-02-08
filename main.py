@@ -8,6 +8,7 @@ from types import SimpleNamespace
 class AppLifecycle(SimpleNamespace):
     type: str
     buildpacks: list[str]
+    stack: str
 
     def as_dict(self) -> dict:
        return self.__dict__
@@ -50,8 +51,14 @@ def main():
     all_apps = _fetch_droplets(all_apps)
     all_apps = _fetch_env(all_apps)
 
-    print("Apps:")
-    print(json.dumps([ app.as_dict() for app in all_apps ]))
+    print("Generating output...")
+    app_json = json.dumps([ app.as_dict() for app in all_apps ])
+
+    print("Writing output...")
+    with open("output.json", "w", encoding="utf-8") as f:
+        f.writelines(app_json)
+
+    print("Done!")
 
 
 def _fetch_apps() -> list[App]:
@@ -96,7 +103,8 @@ def _construct_lifecycle(app: dict) -> AppLifecycle:
     lifecycle = app.get("lifecycle", {})
     return AppLifecycle(
             type=lifecycle.get("type"),
-            buildpacks=lifecycle.get("data", {}).get("buildpacks") # TODO: Docker apps
+            buildpacks=lifecycle.get("data", {}).get("buildpacks"), # TODO: Docker apps
+            stack=lifecycle.get("data", {}).get("stack"), # TODO: Docker apps
             )
 
 
