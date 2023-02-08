@@ -40,6 +40,7 @@ class App(SimpleNamespace):
 
     def as_dict(self) -> dict:
         return {
+                "guid": self.guid,
                 "state": self.state,
                 "lifecycle": self.lifecycle.as_dict(),
                 "current_droplet": self.current_droplet.as_dict(),
