@@ -21,12 +21,22 @@ class Droplet(SimpleNamespace):
        return self.__dict__
 
 
+class Env(SimpleNamespace):
+    vcap_services: list[str]
+    staging_env_json: list[str]
+    running_env_json: list[str]
+    environment_variables: list[str]
+
+    def as_dict(self) -> dict:
+       return self.__dict__
+
+
 class App(SimpleNamespace):
     guid: str
     state: str
     lifecycle: AppLifecycle
     current_droplet: Droplet | None = None
-    env: dict
+    env: Env | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -34,7 +44,7 @@ class App(SimpleNamespace):
                 "state": self.state,
                 "lifecycle": self.lifecycle.as_dict(),
                 "current_droplet": self.current_droplet.as_dict(),
-                "env": self.env,
+                "env": self.env.as_dict(),
                 }
 
 
@@ -133,9 +143,24 @@ def _fetch_env(all_apps: list[App]) -> list[App]:
             text=True
         ).stdout
         parsed_env_response = json.loads(env_response_raw) # TODO: 404 case
-        app.env = parsed_env_response
+        app.env = _construct_env(parsed_env_response)
     print("\n")
     return all_apps
+
+def _construct_env(env: dict) -> Env:
+    vcap_services = env.get('system_env_json', {}).get('VCAP_SERVICES', {})
+    staging_env_json = env.get('staging_env_json', {})
+    running_env_json = env.get('running_env_json', {})
+    environment_variables = env.get('environment_variables', {})
+    return Env(
+            vcap_services=_noneable_keys(vcap_services),
+            staging_env_json=_noneable_keys(staging_env_json),
+            running_env_json=_noneable_keys(running_env_json),
+            environment_variables=_noneable_keys(environment_variables),
+            )
+
+def _noneable_keys(vars: dict | None) -> list[str]:
+    return list(vars.keys()) if vars else []
 
 
 if __name__ == "__main__":
