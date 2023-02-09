@@ -73,6 +73,28 @@ Example output:
 ]
 ```
 
+## Running on Cloud Foundry
+
+For a controlled environment with the required dependencies (python and cf
+CLI), you can run the script on a Cloud Foundry component VM:
+
+1. ssh onto a bosh instance with the cf CLI. A good way to get it is via the
+   `cf-cli` bosh release. For example, in TAS, a `compute` or `clock_global`
+   instance: `bosh ssh clock_global`.
+1. `sudo su vcap`
+1. Change into a directory owned by vcap (so we can retrieve the output file
+   later). For example: `cd /var/vcap/data/cloud_controller_clock/tmp/`.
+1. `wget https://raw.githubusercontent.com/Gerg/buildpack-sniffer/main/main.py`
+1. `chmod +x main.py`
+1. Get cf CLI on your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
+   (The exact path for the CLI may differ, depending on your deployment.)
+1. `cf api <target api>`
+1. Log in with admin_read_only credentials: `cf login`
+1. `./main.py`
+1. This will generate an `output.json` in the same directory
+1. Exit the bosh instance
+1. Bosh SCP the file off of the instance. For example: `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
+
 ## Development
 
 For testing (or running, I suppose) on Python 3.5 via the included Dockerfile (requires Docker):
