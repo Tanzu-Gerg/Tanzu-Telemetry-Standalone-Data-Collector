@@ -43,8 +43,8 @@ class App(SimpleNamespace):
                 "guid": self.guid,
                 "state": self.state,
                 "lifecycle": self.lifecycle.as_dict(),
-                "current_droplet": self.current_droplet.as_dict(),
-                "env": self.env.as_dict(),
+                "current_droplet": self.current_droplet.as_dict() if self.current_droplet else None,
+                "env": self.env.as_dict() if self.env else None,
                 }
 
 
@@ -87,13 +87,13 @@ def _fetch_apps() -> list[App]:
 
         parsed_apps_response = json.loads(apps_response_raw)
         apps_pagination = parsed_apps_response.get("pagination", {})
-        total_app_pages = apps_pagination.get("total_pages")
+        total_app_pages = apps_pagination.get("total_pages", "?")
 
-        apps = parsed_apps_response.get("resources")
+        apps = parsed_apps_response.get("resources", [])
         parsed_apps = [
             App(
-                guid=app.get("guid"),
-                state=app.get("state"),
+                guid=app.get("guid", ""),
+                state=app.get("state", ""),
                 lifecycle=_construct_lifecycle(app)
             )
             for app in apps
@@ -102,7 +102,7 @@ def _fetch_apps() -> list[App]:
 
         current_app_page += 1
 
-        if not apps_pagination.get("next"):
+        if not apps_pagination.get("next", None):
             break
 
     print("\n")
@@ -112,9 +112,9 @@ def _fetch_apps() -> list[App]:
 def _construct_lifecycle(app: dict) -> AppLifecycle:
     lifecycle = app.get("lifecycle", {})
     return AppLifecycle(
-            type=lifecycle.get("type"),
-            buildpacks=lifecycle.get("data", {}).get("buildpacks"), # TODO: Docker apps
-            stack=lifecycle.get("data", {}).get("stack"), # TODO: Docker apps
+            type=lifecycle.get("type", ""),
+            buildpacks=lifecycle.get("data", {}).get("buildpacks", []),
+            stack=lifecycle.get("data", {}).get("stack", ""),
             )
 
 
@@ -127,7 +127,7 @@ def _fetch_droplets(all_apps: list[App]) -> list[App]:
             stdout=subprocess.PIPE,
             text=True
         ).stdout
-        parsed_droplet_response = json.loads(droplet_response_raw) # TODO: 404 case
+        parsed_droplet_response = json.loads(droplet_response_raw)
         app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get('buildpacks', []))
     print("\n")
     return all_apps
@@ -142,7 +142,7 @@ def _fetch_env(all_apps: list[App]) -> list[App]:
             stdout=subprocess.PIPE,
             text=True
         ).stdout
-        parsed_env_response = json.loads(env_response_raw) # TODO: 404 case
+        parsed_env_response = json.loads(env_response_raw)
         app.env = _construct_env(parsed_env_response)
     print("\n")
     return all_apps
