@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import hashlib
 import json
 import subprocess
 
+from os import environ
 from types import SimpleNamespace
 from typing import List, Dict, Optional
 
@@ -63,6 +65,7 @@ class App(SimpleNamespace):
 
 
 PAGE_SIZE=5000
+BYPASS_ANON=environ.get("BYPASS_ANON")
 
 def main():
     print("""
@@ -169,9 +172,9 @@ def _construct_env(env: Dict) -> Env:
     environment_variables = env.get('environment_variables', {})
     return Env(
             vcap_services=_construct_services(vcap_services),
-            staging_env_json=_noneable_keys(staging_env_json),
-            running_env_json=_noneable_keys(running_env_json),
-            environment_variables=_noneable_keys(environment_variables),
+            staging_env_json=_anonymize_list(_noneable_keys(staging_env_json)),
+            running_env_json=_anonymize_list(_noneable_keys(running_env_json)),
+            environment_variables=_anonymize_list(_noneable_keys(environment_variables)),
             )
 
 
@@ -182,9 +185,9 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
             for binding in bindings:
                 all_services.append(
                     Service(
-                        name=binding.get("name", ""),
-                        label=binding.get("label", ""),
-                        tags=binding.get("tags", []),
+                        name=_anonymize_str(binding.get("name", "")),
+                        label=_anonymize_str(binding.get("label", "")),
+                        tags=_anonymize_list(binding.get("tags", [])),
                         )
                 )
         return all_services
@@ -194,6 +197,15 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
 
 def _noneable_keys(vars: Optional[Dict]) -> List[str]:
     return list(vars.keys()) if vars else []
+
+
+def _anonymize_list(list_of_str: List[str]) -> str:
+    return [_anonymize_str(string) for string in list_of_str]
+
+
+def _anonymize_str(string: str) -> str:
+    if BYPASS_ANON: return string
+    return hashlib.sha256(bytes(string, "utf-8")).hexdigest()
 
 
 if __name__ == "__main__":

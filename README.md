@@ -32,12 +32,15 @@ Data collected:
 - Apps' environment variable names (values are not collected)
 - Apps' service bindings (name, label, and tags)
 
+The following fields will be anonymized by taking a sha256 hash of the values:
+- Environment variable names
+
 Example output:
 ```json
 [
   {
-    "guid": "8ab99c1c-ce0d-4184-b6d4-5d8a7076fd9a",
-    "state": "STOPPED",
+    "guid": "9ffd6678-a74b-4ebe-8137-5617dd87b941",
+    "state": "STARTED",
     "lifecycle": {
       "type": "buildpack",
       "buildpacks": [],
@@ -49,29 +52,39 @@ Example output:
           "name": "ruby_buildpack",
           "detect_output": "ruby",
           "buildpack_name": "ruby",
-          "version": "1.8.60"
+          "version": "1.9.1"
         }
       ]
     },
     "env": {
       "vcap_services": [
         {
-          "name": "my-service",
-          "label": "a-service",
-          "tags": [
-            "servicing"
-          ]
+          "name": "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
+          "label": "6351e758fb69733d7d4ec5faea3cf7c2b1494db263eb0c0a2c889b2578114ec4",
+          "tags": ["798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7"]
         }
       ],
-      "staging_env_json": [],
-      "running_env_json": [],
+      "staging_env_json": [
+        "e919a75364398a449f860aeadddc57fa0502145a4e63959ddb33c417a48dc0da"
+      ],
+      "running_env_json": [
+        "c071cf5f5ed6f884cc70155b6f05f755fd46a302d05e4261b7e92ce878bbfed8"
+      ],
       "environment_variables": [
-        "JAVA_OPTS"
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
       ]
     }
   }
 ]
 ```
+
+### Configuration
+
+Environment variables:
+
+|Var|Effect|
+|-|-|
+| `BYPASS_ANON` | If set, do not anonymize fields. |
 
 ## Running on Cloud Foundry
 
