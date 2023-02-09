@@ -30,6 +30,7 @@ Data collected:
 - Apps' lifecycle stack
 - Apps' current droplet's detected buildpack
 - Apps' environment variable names (values are not collected)
+- Apps' service bindings (name, label, and tags)
 
 Example output:
 ```json
@@ -53,10 +54,20 @@ Example output:
       ]
     },
     "env": {
-      "vcap_services": [],
+      "vcap_services": [
+        {
+          "name": "my-service",
+          "label": "a-service",
+          "tags": [
+            "servicing"
+          ]
+        }
+      ],
       "staging_env_json": [],
       "running_env_json": [],
-      "environment_variables": ["JAVA_OPTS"]
+      "environment_variables": [
+        "JAVA_OPTS"
+      ]
     }
   }
 ]

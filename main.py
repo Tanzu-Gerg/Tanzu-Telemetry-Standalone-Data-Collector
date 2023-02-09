@@ -21,15 +21,28 @@ class Droplet(SimpleNamespace):
        return self.__dict__
 
 
+class Service(SimpleNamespace):
+    label: str
+    tags: list[str]
+    name: str
+
+    def as_dict(self) -> dict:
+       return self.__dict__
+
+
 class Env(SimpleNamespace):
-    vcap_services: list[str]
+    vcap_services: list[Service]
     staging_env_json: list[str]
     running_env_json: list[str]
     environment_variables: list[str]
 
     def as_dict(self) -> dict:
-       return self.__dict__
-
+        return {
+                "vcap_services": [service.as_dict() for service in self.vcap_services],
+                "staging_env_json": self.staging_env_json,
+                "running_env_json": self.running_env_json,
+                "environment_variables": self.environment_variables,
+                }
 
 class App(SimpleNamespace):
     guid: str
@@ -53,7 +66,7 @@ PAGE_SIZE=5000
 def main():
     print("""
 ====================================================================
- ALERT: You must target the desired environment with 'cf' CLI v8,
+ ALERT: You must target the desired environment with 'cf' CLI,
         logged in as an admin or admin_read_only user.
 ====================================================================
 """)
@@ -147,17 +160,36 @@ def _fetch_env(all_apps: list[App]) -> list[App]:
     print("\n")
     return all_apps
 
+
 def _construct_env(env: dict) -> Env:
     vcap_services = env.get('system_env_json', {}).get('VCAP_SERVICES', {})
     staging_env_json = env.get('staging_env_json', {})
     running_env_json = env.get('running_env_json', {})
     environment_variables = env.get('environment_variables', {})
     return Env(
-            vcap_services=_noneable_keys(vcap_services),
+            vcap_services=_construct_services(vcap_services),
             staging_env_json=_noneable_keys(staging_env_json),
             running_env_json=_noneable_keys(running_env_json),
             environment_variables=_noneable_keys(environment_variables),
             )
+
+
+def _construct_services(vcap_services: dict) -> list[Service]:
+    if vcap_services:
+        all_services = []
+        for bindings in vcap_services.values():
+            for binding in bindings:
+                all_services.append(
+                    Service(
+                        name=binding.get("name", ""),
+                        label=binding.get("label", ""),
+                        tags=binding.get("tags", []),
+                        )
+                )
+        return all_services
+    else:
+        return []
+
 
 def _noneable_keys(vars: dict | None) -> list[str]:
     return list(vars.keys()) if vars else []
