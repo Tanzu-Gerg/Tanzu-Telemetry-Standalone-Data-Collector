@@ -4,39 +4,40 @@ import json
 import subprocess
 
 from types import SimpleNamespace
+from typing import List, Dict, Optional
 
 class AppLifecycle(SimpleNamespace):
-    type: str
-    buildpacks: list[str]
-    stack: str
+    # type: str
+    # buildpacks: List[str]
+    # stack: str
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
        return self.__dict__
 
 
 class Droplet(SimpleNamespace):
-    buildpacks: list[dict[str, str]]
+    # buildpacks: List[Dict[str, str]]
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
        return self.__dict__
 
 
 class Service(SimpleNamespace):
-    label: str
-    tags: list[str]
-    name: str
+    # label: str
+    # tags: List[str]
+    # name: str
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
        return self.__dict__
 
 
 class Env(SimpleNamespace):
-    vcap_services: list[Service]
-    staging_env_json: list[str]
-    running_env_json: list[str]
-    environment_variables: list[str]
+    # vcap_services: List[Service]
+    # staging_env_json: List[str]
+    # running_env_json: List[str]
+    # environment_variables: List[str]
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
         return {
                 "vcap_services": [service.as_dict() for service in self.vcap_services],
                 "staging_env_json": self.staging_env_json,
@@ -45,13 +46,13 @@ class Env(SimpleNamespace):
                 }
 
 class App(SimpleNamespace):
-    guid: str
-    state: str
-    lifecycle: AppLifecycle
-    current_droplet: Droplet | None = None
-    env: Env | None = None
+    # guid: str
+    # state: str
+    # lifecycle: AppLifecycle
+    # current_droplet: Optional[Droplet] = None
+    # env: Optional[Env] = None
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict:
         return {
                 "guid": self.guid,
                 "state": self.state,
@@ -84,18 +85,18 @@ def main():
     print("Done!")
 
 
-def _fetch_apps() -> list[App]:
+def _fetch_apps() -> List[App]:
     print("Fetching all apps...")
 
     current_app_page = 1
     total_app_pages = "1"
     all_apps = []
     while True:
-        print(f"Fetching apps page {current_app_page}/{total_app_pages}", end="\r")
+        print("Fetching apps page " + str(current_app_page) + "/" + str(total_app_pages), end="\r")
         apps_response_raw = subprocess.run(
-            ["cf", "curl", f"/v3/apps?per_page={PAGE_SIZE};page={current_app_page}"],
+            ["cf", "curl", "/v3/apps?per_page=" + str(PAGE_SIZE) + ";page=" + str(current_app_page)],
             stdout=subprocess.PIPE,
-            text=True
+            universal_newlines=True
         ).stdout
 
         parsed_apps_response = json.loads(apps_response_raw)
@@ -122,7 +123,7 @@ def _fetch_apps() -> list[App]:
     return all_apps
 
 
-def _construct_lifecycle(app: dict) -> AppLifecycle:
+def _construct_lifecycle(app: Dict) -> AppLifecycle:
     lifecycle = app.get("lifecycle", {})
     return AppLifecycle(
             type=lifecycle.get("type", ""),
@@ -131,14 +132,14 @@ def _construct_lifecycle(app: dict) -> AppLifecycle:
             )
 
 
-def _fetch_droplets(all_apps: list[App]) -> list[App]:
+def _fetch_droplets(all_apps: List[App]) -> List[App]:
     print("Fetching droplets...")
     for index, app in enumerate(all_apps):
-        print(f"Fetching droplet {index + 1}/{len(all_apps)}", end="\r")
+        print("Fetching droplet " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         droplet_response_raw = subprocess.run(
-            ["cf", "curl", f"/v3/apps/{app.guid}/droplets/current"],
+            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/droplets/current"],
             stdout=subprocess.PIPE,
-            text=True
+            universal_newlines=True
         ).stdout
         parsed_droplet_response = json.loads(droplet_response_raw)
         app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get('buildpacks', []))
@@ -146,14 +147,14 @@ def _fetch_droplets(all_apps: list[App]) -> list[App]:
     return all_apps
 
 
-def _fetch_env(all_apps: list[App]) -> list[App]:
+def _fetch_env(all_apps: List[App]) -> List[App]:
     print("Fetching environment variables...")
     for index, app in enumerate(all_apps):
-        print(f"Fetching env {index + 1}/{len(all_apps)}", end="\r")
+        print("Fetching env " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         env_response_raw = subprocess.run(
-            ["cf", "curl", f"/v3/apps/{app.guid}/env"],
+            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/env"],
             stdout=subprocess.PIPE,
-            text=True
+            universal_newlines=True
         ).stdout
         parsed_env_response = json.loads(env_response_raw)
         app.env = _construct_env(parsed_env_response)
@@ -161,7 +162,7 @@ def _fetch_env(all_apps: list[App]) -> list[App]:
     return all_apps
 
 
-def _construct_env(env: dict) -> Env:
+def _construct_env(env: Dict) -> Env:
     vcap_services = env.get('system_env_json', {}).get('VCAP_SERVICES', {})
     staging_env_json = env.get('staging_env_json', {})
     running_env_json = env.get('running_env_json', {})
@@ -174,7 +175,7 @@ def _construct_env(env: dict) -> Env:
             )
 
 
-def _construct_services(vcap_services: dict) -> list[Service]:
+def _construct_services(vcap_services: Dict) -> List[Service]:
     if vcap_services:
         all_services = []
         for bindings in vcap_services.values():
@@ -191,7 +192,7 @@ def _construct_services(vcap_services: dict) -> list[Service]:
         return []
 
 
-def _noneable_keys(vars: dict | None) -> list[str]:
+def _noneable_keys(vars: Optional[Dict]) -> List[str]:
     return list(vars.keys()) if vars else []
 
 
