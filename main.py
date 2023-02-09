@@ -75,8 +75,9 @@ def main():
 ====================================================================
 """)
     all_apps = _fetch_apps()
-    all_apps = _fetch_droplets(all_apps)
-    all_apps = _fetch_env(all_apps)
+    if len(all_apps):
+        all_apps = _fetch_droplets(all_apps)
+        all_apps = _fetch_env(all_apps)
 
     print("Generating output...")
     app_json = json.dumps([ app.as_dict() for app in all_apps ])
@@ -103,6 +104,9 @@ def _fetch_apps() -> List[App]:
         ).stdout
 
         parsed_apps_response = json.loads(apps_response_raw)
+
+        errors = parsed_apps_response.get("errors", None)
+        _handle_errors(parsed_apps_response)
         apps_pagination = parsed_apps_response.get("pagination", {})
         total_app_pages = apps_pagination.get("total_pages", "?")
 
@@ -122,7 +126,7 @@ def _fetch_apps() -> List[App]:
         if not apps_pagination.get("next", None):
             break
 
-    print("\n")
+    print("\nFetched " + str(len(all_apps)) + " apps.\n")
     return all_apps
 
 
@@ -193,6 +197,13 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
         return all_services
     else:
         return []
+
+
+def _handle_errors(parsed_response: dict):
+        errors = parsed_response.get("errors", None)
+        if errors:
+            print("\nEncountered API errors: ")
+            print(errors)
 
 
 def _noneable_keys(vars: Optional[Dict]) -> List[str]:
