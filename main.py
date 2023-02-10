@@ -63,17 +63,24 @@ class App(SimpleNamespace):
                 "env": self.env.as_dict() if self.env else None,
                 }
 
-
-PAGE_SIZE=5000
-BYPASS_ANON=environ.get("BYPASS_ANON")
-
-def main():
-    print("""
+ALERT = """
 ====================================================================
  ALERT: You must target the desired environment with 'cf' CLI,
         logged in as an admin or admin_read_only user.
 ====================================================================
-""")
+"""
+
+PAGE_SIZE=5000
+NO_ANON_JPB_VARS = [
+        "JBP_DEFAULT_COMPONENTS",
+        "JBP_CONFIG_COMPONENTS",
+        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION",
+        ]
+ANON_JBP=environ.get("ANON_JBP")
+BYPASS_ANON=environ.get("BYPASS_ANON")
+
+def main():
+    print(ALERT)
     all_apps = _fetch_apps()
     if len(all_apps):
         all_apps = _fetch_droplets(all_apps)
@@ -176,9 +183,9 @@ def _construct_env(env: Dict) -> Env:
     environment_variables = env.get('environment_variables', {})
     return Env(
             vcap_services=_construct_services(vcap_services),
-            staging_env=_anonymize_list(_noneable_keys(staging_env_json)),
-            running_env=_anonymize_list(_noneable_keys(running_env_json)),
-            environment_variables=_anonymize_list(_noneable_keys(environment_variables)),
+            staging_env=_flatten_variables(staging_env_json),
+            running_env=_flatten_variables(running_env_json),
+            environment_variables=_flatten_variables(environment_variables),
             )
 
 
@@ -189,8 +196,8 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
             for binding in bindings:
                 all_services.append(
                     Service(
-                        name=_anonymize_str(binding.get("name", "")),
-                        label=_anonymize_str(binding.get("label", "")),
+                        name=_anonymize(binding.get("name", "")),
+                        label=_anonymize(binding.get("label", "")),
                         tags=_anonymize_list(binding.get("tags", [])),
                         )
                 )
@@ -206,15 +213,22 @@ def _handle_errors(parsed_response: dict):
             print(errors)
 
 
-def _noneable_keys(vars: Optional[Dict]) -> List[str]:
-    return list(vars.keys()) if vars else []
+def _flatten_variables(vars: Optional[Dict]) -> List[str]:
+    flattened_vars = []
+    if vars:
+        for key, val in vars.items():
+            if ((not ANON_JBP) and (key in NO_ANON_JPB_VARS)):
+                flattened_vars.append(key + "=" + val)
+            else:
+                flattened_vars.append(_anonymize(key))
+    return flattened_vars
 
 
 def _anonymize_list(list_of_str: List[str]) -> str:
-    return [_anonymize_str(string) for string in list_of_str]
+    return [_anonymize(string) for string in list_of_str]
 
 
-def _anonymize_str(string: str) -> str:
+def _anonymize(string: str) -> str:
     if BYPASS_ANON: return string
     return hashlib.sha256(bytes(string, "utf-8")).hexdigest()
 

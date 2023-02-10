@@ -22,24 +22,31 @@ Currently, this script depends on the following (these may relax over time):
 
 Output will be in `./output.json`
 
-Data collected:
-- Apps' guid
-- Apps' state
-- Apps' lifecycle type
-- Apps' lifecycle buildpacks
-- Apps' lifecycle stack
-- Apps' current droplet's detected buildpack
-- Apps' environment variable names (values are not collected)
-- Apps' service bindings (name, label, and tags)
+Data collected for all apps:
+- guid
+- state
+- lifecycle type
+- lifecycle buildpacks
+- lifecycle stack
+- current droplet's detected buildpack
+- Environment variable names (in most cases, values are not collected)
+- Environment variable values for a small set of Java Buildpack-related variables (see below)
+- App service bindings (name, label, and tags)
 
 The following fields will be anonymized by taking a sha256 hash of the values:
-- Environment variable names
+- Environment variable names (excluding a small set of Java Buildpack-related variables (see below))
+- Service binding names, labels, and tags
+
+The un-anonymized environment variables and values that are collected are as follows:
+- `JBP_DEFAULT_COMPONENTS`
+- `JBP_CONFIG_COMPONENTS`
+- `JBP_CONFIG_SPRING_AUTO_RECONFIGURATION`
 
 Example output:
 ```json
 [
   {
-    "guid": "9ffd6678-a74b-4ebe-8137-5617dd87b941",
+    "guid": "69088a94-fe86-4a8c-9695-c4861d020dce",
     "state": "STARTED",
     "lifecycle": {
       "type": "buildpack",
@@ -49,10 +56,10 @@ Example output:
     "current_droplet": {
       "buildpacks": [
         {
-          "name": "ruby_buildpack",
-          "detect_output": "ruby",
-          "buildpack_name": "ruby",
-          "version": "1.9.1"
+          "name": "java_buildpack",
+          "detect_output": "java",
+          "buildpack_name": "java",
+          "version": "v4.53-https://github.com/cloudfoundry/java-buildpack#526dbcce"
         }
       ]
     },
@@ -64,14 +71,18 @@ Example output:
           "tags": ["798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7"]
         }
       ],
-      "staging_env_json": [
-        "e919a75364398a449f860aeadddc57fa0502145a4e63959ddb33c417a48dc0da"
+      "staging_env": [
+        "e919a75364398a449f860aeadddc57fa0502145a4e63959ddb33c417a48dc0da",
+        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}"
       ],
-      "running_env_json": [
-        "c071cf5f5ed6f884cc70155b6f05f755fd46a302d05e4261b7e92ce878bbfed8"
+      "running_env": [
+        "c071cf5f5ed6f884cc70155b6f05f755fd46a302d05e4261b7e92ce878bbfed8",
+        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}"
       ],
       "environment_variables": [
-        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        "a11b705f50010a321815b0a0aca534ab7aa89d597f32db9ffc7df459c8d61360",
+        "JBP_CONFIG_COMPONENTS={jres: [\"JavaBuildpack::Jre::OpenJdkJRE\"]}",
+        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION={enabled: false}"
       ]
     }
   }
@@ -84,7 +95,13 @@ Environment variables:
 
 |Var|Effect|
 |-|-|
+| `ANON_JBP` | If set, anonymize Java Buildpack-related environment variables. |
 | `BYPASS_ANON` | If set, do not anonymize fields. |
+
+Usage example:
+```sh
+BYPASS_ANON=1 ./main.py
+```
 
 ## Running on Cloud Foundry
 
