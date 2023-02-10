@@ -110,7 +110,7 @@ def _fetch_apps() -> List[App]:
             universal_newlines=True
         ).stdout
 
-        parsed_apps_response = json.loads(apps_response_raw)
+        parsed_apps_response = _parse_json(apps_response_raw)
 
         errors = parsed_apps_response.get("errors", None)
         _handle_errors(parsed_apps_response)
@@ -155,7 +155,7 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
             stdout=subprocess.PIPE,
             universal_newlines=True
         ).stdout
-        parsed_droplet_response = json.loads(droplet_response_raw)
+        parsed_droplet_response = _parse_json(droplet_response_raw)
         app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get('buildpacks', []))
     print("\n")
     return all_apps
@@ -170,7 +170,7 @@ def _fetch_env(all_apps: List[App]) -> List[App]:
             stdout=subprocess.PIPE,
             universal_newlines=True
         ).stdout
-        parsed_env_response = json.loads(env_response_raw)
+        parsed_env_response = _parse_json(env_response_raw)
         app.env = _construct_env(parsed_env_response)
     print("\n")
     return all_apps
@@ -206,7 +206,16 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
         return []
 
 
-def _handle_errors(parsed_response: dict):
+def _parse_json(raw_response: str) -> dict:
+    try:
+        parsed_response = json.loads(raw_response)
+        return parsed_response
+    except Exception as e:
+        print("\n[Error] Failed to parse:\n" + str(raw_response) + "\nas JSON.")
+        raise e
+
+
+def _handle_errors(parsed_response: dict) -> None:
         errors = parsed_response.get("errors", None)
         if errors:
             print("\nEncountered API errors: ")
