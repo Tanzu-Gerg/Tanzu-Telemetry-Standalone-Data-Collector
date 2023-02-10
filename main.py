@@ -35,15 +35,15 @@ class Service(SimpleNamespace):
 
 class Env(SimpleNamespace):
     # vcap_services: List[Service]
-    # staging_env_json: List[str]
-    # running_env_json: List[str]
+    # staging_env: List[str]
+    # running_env: List[str]
     # environment_variables: List[str]
 
     def as_dict(self) -> Dict:
         return {
                 "vcap_services": [service.as_dict() for service in self.vcap_services],
-                "staging_env_json": self.staging_env_json,
-                "running_env_json": self.running_env_json,
+                "staging_env": self.staging_env,
+                "running_env": self.running_env,
                 "environment_variables": self.environment_variables,
                 }
 
@@ -176,8 +176,8 @@ def _construct_env(env: Dict) -> Env:
     environment_variables = env.get('environment_variables', {})
     return Env(
             vcap_services=_construct_services(vcap_services),
-            staging_env_json=_anonymize_list(_noneable_keys(staging_env_json)),
-            running_env_json=_anonymize_list(_noneable_keys(running_env_json)),
+            staging_env=_anonymize_list(_noneable_keys(staging_env_json)),
+            running_env=_anonymize_list(_noneable_keys(running_env_json)),
             environment_variables=_anonymize_list(_noneable_keys(environment_variables)),
             )
 
