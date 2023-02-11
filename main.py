@@ -97,7 +97,7 @@ def main():
 
 
 def _fetch_apps() -> List[App]:
-    print("Fetching all apps...")
+    print("[Step 1/3] Fetching all apps...")
 
     current_app_page = 1
     total_app_pages = "1"
@@ -147,7 +147,7 @@ def _construct_lifecycle(app: Dict) -> AppLifecycle:
 
 
 def _fetch_droplets(all_apps: List[App]) -> List[App]:
-    print("Fetching droplets...")
+    print("[Step 2/3] Fetching droplets...")
     for index, app in enumerate(all_apps):
         print("Fetching droplet " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         droplet_response_raw = subprocess.run(
@@ -162,7 +162,7 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
 
 
 def _fetch_env(all_apps: List[App]) -> List[App]:
-    print("Fetching environment variables...")
+    print("[Step 3/3] Fetching environment variables...")
     for index, app in enumerate(all_apps):
         print("Fetching env " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         env_response_raw = subprocess.run(

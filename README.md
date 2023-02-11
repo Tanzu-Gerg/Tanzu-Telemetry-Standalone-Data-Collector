@@ -125,6 +125,18 @@ CLI), you can run the script on a Cloud Foundry component VM:
 1. Exit the bosh instance
 1. Bosh SCP the file off of the instance. For example: `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
 
+Running from within the bosh deployment also reduces network latency, which can
+speed up execution time.
+
+## Performance
+
+Performance for a trial against an environment seeded with 10,000 apps (NOT app
+instances), when run on a bosh instance (jammy stemcell), as described above:
+- Execution time: ~30 minutes
+- Memory consumption: ~110M
+- CPU consumption: ~1.4% of 2.20GHz CPU
+- Output file size: ~7.3M
+
 ## Development
 
 For testing (or running, I suppose) on Python 3.5 via the included Dockerfile (requires Docker):
