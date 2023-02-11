@@ -14,6 +14,7 @@ class AppLifecycle(SimpleNamespace):
     # stack: str
 
     def as_dict(self) -> Dict:
+       """Define how app lifecycles will be rendered as JSON."""
        return self.__dict__
 
 
@@ -21,6 +22,7 @@ class Droplet(SimpleNamespace):
     # buildpacks: List[Dict[str, str]]
 
     def as_dict(self) -> Dict:
+       """Define how droplets will be rendered as JSON."""
        return self.__dict__
 
 
@@ -30,6 +32,7 @@ class Service(SimpleNamespace):
     # name: str
 
     def as_dict(self) -> Dict:
+       """Define how services will be rendered as JSON."""
        return self.__dict__
 
 
@@ -40,6 +43,7 @@ class Env(SimpleNamespace):
     # environment_variables: List[str]
 
     def as_dict(self) -> Dict:
+        """Define how environment variables will be rendered as JSON."""
         return {
                 "vcap_services": [service.as_dict() for service in self.vcap_services],
                 "staging_env": self.staging_env,
@@ -55,6 +59,7 @@ class App(SimpleNamespace):
     # env: Optional[Env] = None
 
     def as_dict(self) -> Dict:
+        """Define how Apps will be rendered as JSON."""
         return {
                 "guid": self.guid,
                 "state": self.state,
@@ -80,6 +85,10 @@ ANON_JBP=environ.get("ANON_JBP")
 BYPASS_ANON=environ.get("BYPASS_ANON")
 
 def main():
+    """Collect all visible apps, then fetch the current droplet and environment
+    variables for each app. Render the resulting data as JSON and write to an
+    output file in the current directory.
+    """
     print(ALERT)
     all_apps = _fetch_apps()
     if len(all_apps):
@@ -97,6 +106,10 @@ def main():
 
 
 def _fetch_apps() -> List[App]:
+    """Fetch the first page of apps from the API (via 'cf curl') and build a
+    list of App objects containing guid, state, and lifecycle. Then repeat for
+    each page of apps, until there are no additional pages of apps.
+    """
     print("[Step 1/3] Fetching all apps...")
 
     current_app_page = 1
@@ -138,6 +151,9 @@ def _fetch_apps() -> List[App]:
 
 
 def _construct_lifecycle(app: Dict) -> AppLifecycle:
+    """Convert API app dict into AppLifecycle object, containing lifecycle
+    type, configured buildpacks, and stack.
+    """
     lifecycle = app.get("lifecycle", {})
     return AppLifecycle(
             type=lifecycle.get("type", ""),
@@ -147,6 +163,11 @@ def _construct_lifecycle(app: Dict) -> AppLifecycle:
 
 
 def _fetch_droplets(all_apps: List[App]) -> List[App]:
+    """For each app, fetch that app's current droplet via
+    '/v3/apps/:guid/droplets/current'. Use the resulting JSON to construct a
+    Droplet object, containing the buildpacks detected during staging. Add the
+    constructed Droplet object to the corresponding App object.
+    """
     print("[Step 2/3] Fetching droplets...")
     for index, app in enumerate(all_apps):
         print("Fetching droplet " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
@@ -162,6 +183,12 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
 
 
 def _fetch_env(all_apps: List[App]) -> List[App]:
+    """For each app, fetch that app's environment variables via
+    '/v3/apps/:guid/env'. This will include app-level environment variables, in
+    addition to environment variable groups and VCAP_SERVICES. Use the
+    resulting JSON to construct an Env object containing these environment
+    variables. Add the constructed Env object to the corresponding App object.
+    """
     print("[Step 3/3] Fetching environment variables...")
     for index, app in enumerate(all_apps):
         print("Fetching env " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
@@ -177,6 +204,11 @@ def _fetch_env(all_apps: List[App]) -> List[App]:
 
 
 def _construct_env(env: Dict) -> Env:
+    """Convert API env dict into Env object, containing environment variables
+    from VCAP_SERVICES, staging environment variable groups, running
+    environment variable groups, and environment variables configured directly
+    on the app. Environment variables are mostly anonymized, as described below.
+    """
     vcap_services = env.get('system_env_json', {}).get('VCAP_SERVICES', {})
     staging_env_json = env.get('staging_env_json', {})
     running_env_json = env.get('running_env_json', {})
@@ -189,7 +221,10 @@ def _construct_env(env: Dict) -> Env:
             )
 
 
-def _construct_services(vcap_services: Dict) -> List[Service]:
+def _construct_services(vcap_services: Optional[Dict]) -> List[Service]:
+    """Collect name, label, and tags for each service binding in VCAP_SERVICES.
+    All service fields are sha256-anonymized.
+    """
     if vcap_services:
         all_services = []
         for bindings in vcap_services.values():
@@ -206,23 +241,20 @@ def _construct_services(vcap_services: Dict) -> List[Service]:
         return []
 
 
-def _parse_json(raw_response: str) -> dict:
-    try:
-        parsed_response = json.loads(raw_response)
-        return parsed_response
-    except Exception as e:
-        print("\n[Error] Failed to parse:\n" + str(raw_response) + "\nas JSON.")
-        raise e
-
-
-def _handle_errors(parsed_response: dict) -> None:
-        errors = parsed_response.get("errors", None)
-        if errors:
-            print("\nEncountered API errors: ")
-            print(errors)
-
-
 def _flatten_variables(vars: Optional[Dict]) -> List[str]:
+    """Convert environment variable dict into a list of strings.
+
+    For most environment variables, only environment variable keys
+    (NOT values) are collected in an sha256-anonymized list.
+
+    A selection of Java Buildpack configuration environment variables
+    (defined in NO_ANON_JPB_VARS, above) are NOT anonymized AND
+    values are collected in addition to keys.
+
+    The Java Buildpack configuration environment variables can be anonymized
+    by setting the ANON_JBP environment variable in the execution shell when
+    running this script.
+    """
     flattened_vars = []
     if vars:
         for key, val in vars.items():
@@ -234,12 +266,44 @@ def _flatten_variables(vars: Optional[Dict]) -> List[str]:
 
 
 def _anonymize_list(list_of_str: List[str]) -> str:
+    """Anonymize all strings in a list."""
     return [_anonymize(string) for string in list_of_str]
 
 
 def _anonymize(string: str) -> str:
+    """Anonymize a string by taking a sha256 digest of the string. The
+    resulting anonymized string can NOT be converted back to the original
+    string. However, known strings can be identified, because the digest will
+    be the same.
+
+    For example, the string "foo" always anonymizes into
+    "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", so someone
+    looking for "foo" could identify it by searching for the known digest.
+    However, someone could NOT recover the string "foo" from the digest alone.
+
+    If the BYPASS_ANON environment variable is set in the execution shell when
+    running this script, then values will not be anonymized.
+    """
     if BYPASS_ANON: return string
     return hashlib.sha256(bytes(string, "utf-8")).hexdigest()
+
+
+def _parse_json(raw_response: str) -> dict:
+    """Parse API response JSON and return the resulting dict."""
+    try:
+        parsed_response = json.loads(raw_response)
+        return parsed_response
+    except Exception as e:
+        print("\n[Error] Failed to parse:\n" + str(raw_response) + "\nas JSON.")
+        raise e
+
+
+def _handle_errors(parsed_response: dict) -> None:
+    """Surface any errors returned from the API."""
+    errors = parsed_response.get("errors", None)
+    if errors:
+        print("\nEncountered API errors: ")
+        print(errors)
 
 
 if __name__ == "__main__":
