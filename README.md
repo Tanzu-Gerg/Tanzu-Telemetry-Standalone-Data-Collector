@@ -1,5 +1,5 @@
-# buildpack-sniffer
-Sniff out what buildpacks are in use (and how) on a given Cloud Foundry
+# Cloud Foundry Buildpack Data Collector
+Collect data on what buildpacks are in use (and how) on a given Cloud Foundry
 deployment. This tool is intended to help understand how easy it will be to
 migrate Cloud Foundry applications to v3 buildpacks (aka [Cloud Native
 Buildpacks](https://buildpacks.io/)).
@@ -127,12 +127,14 @@ CLI), you can run the script on a Cloud Foundry component VM as follows:
 1. Switch to the "vcap" user: `sudo su vcap`
 1. Change into a directory owned by vcap (so we can retrieve the output file
    later). For example: `cd /var/vcap/data/cloud_controller_clock/tmp/`.
-1. Download this script: `wget https://raw.githubusercontent.com/Gerg/buildpack-sniffer/main/main.py`
+1. Download this script: `wget https://raw.githubusercontent.com/Gerg/buildpack-data-collector/main/main.py`
 1. Make the script executable: `chmod +x main.py`
 1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
    (The exact path for the CLI may differ, depending on your deployment.)
 1. Target the desired Cloud Foundry API with the CLI: `cf api <target api>`
-1. Log in with admin_read_only or admin credentials: `cf login`
+1. Log in with
+   [admin_read_only](https://downey.io/notes/dev/create-cloud-foundry-read-only-admin/)
+   or admin credentials: `cf login`
 1. Execute the script: `./main.py`
 1. The script will generate an `output.json` in your current directory
 1. Exit the bosh instance
@@ -156,7 +158,7 @@ described above:
 
 For testing (or running, I suppose) on Python 3.5 via the included Dockerfile (requires Docker):
 
-1. Navigate to the `buildpack-sniffer` directory
+1. Navigate to the `buildpack-data-collector` directory
 1. Get a Linux CF CLI in the directory. For example:
    ```
    $ wget https://packages.cloudfoundry.org/stable\?release\=linux64-binary\&version\=8.5.0\&source\=github-rel -O cf.tgz
@@ -166,7 +168,7 @@ For testing (or running, I suppose) on Python 3.5 via the included Dockerfile (r
    $ mv cf8 cf
    ...
    ```
-1. `docker build -t buildpack-sniffer .`
-1. `docker run --env "CF_API=<cf API here>" --env "CF_USER=admin" --env "CF_PASSWORD=<admin password here>" buildpack-sniffer`
+1. `docker build -t buildpack-data-collector`
+1. `docker run --env "CF_API=<cf API here>" --env "CF_USER=admin" --env "CF_PASSWORD=<admin password here>" buildpack-data-collector`
 
 The Dockerfile is based on Ubuntu Xenial, which should be similar to the Xenial stemcell.
