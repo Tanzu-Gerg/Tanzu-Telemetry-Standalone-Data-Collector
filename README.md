@@ -30,17 +30,26 @@ Data collected for all apps:
 - lifecycle stack
 - current droplet's detected buildpack
 - Environment variable names (in most cases, values are not collected)
-- Environment variable values for a small set of Java Buildpack-related variables (see below)
+- Environment variable values for a small set of buildpack-related variables (see below)
 - App service bindings (name, label, and tags)
 
 The following fields will be anonymized by taking a sha256 hash of the values:
-- Environment variable names (excluding a small set of Java Buildpack-related variables (see below))
+- Environment variable names (excluding a small set of buildpack-related variables (see below))
 - Service binding names, labels, and tags
 
 The un-anonymized environment variables and values that are collected are as follows:
-- `JBP_DEFAULT_COMPONENTS`
-- `JBP_CONFIG_COMPONENTS`
-- `JBP_CONFIG_SPRING_AUTO_RECONFIGURATION`
+- `BP_PIP_VERSION` used by Python Buildpack
+- `CACHE_NUGET_PACKAGES` used by .NET Core Buildpack
+- `EXTENSIONS` used by PHP Buildpack
+- `GOVERSION` used by Go Buildpack
+- `JBP_CONFIG_COMPONENTS` used by Java Buildpack
+- `JBP_CONFIG_SPRING_AUTO_RECONFIGURATION` used by Java Buildpack
+- `JBP_DEFAULT_COMPONENTS` used by Java Buildpack
+- `NODE_ENV` used by Node.js Buildpack
+- `WEBDIR` used by PHP Buildpack
+- `WEB_CONCURRENCY` used by Node.js Buildpack
+- `WEB_MEMORY` used by Node.js Buildpack
+- `WEB_SERVER` used by PHP Buildpack
 
 Example output:
 ```json
@@ -95,7 +104,7 @@ Environment variables:
 
 |Var|Effect|
 |-|-|
-| `ANON_JBP` | If set, anonymize Java Buildpack-related environment variables. |
+| `ANON_BP_VARS` | If set, anonymize buildpack-related environment variables. |
 | `BYPASS_ANON` | If set, do not anonymize fields. |
 
 Usage example:

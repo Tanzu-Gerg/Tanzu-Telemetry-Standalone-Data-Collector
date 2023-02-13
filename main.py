@@ -76,12 +76,21 @@ ALERT = """
 """
 
 PAGE_SIZE=5000
-NO_ANON_JPB_VARS = [
-        "JBP_DEFAULT_COMPONENTS",
-        "JBP_CONFIG_COMPONENTS",
-        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION",
+NO_ANON_VARS = [
+        "BP_PIP_VERSION", # used by Python Buildpack
+        "CACHE_NUGET_PACKAGES", # used by .NET Core Buildpack
+        "EXTENSIONS", # used by PHP Buildpack
+        "GOVERSION", # used by Go Buildpack
+        "JBP_CONFIG_COMPONENTS", # used by Java Buildpack
+        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION", # used by Java Buildpack
+        "JBP_DEFAULT_COMPONENTS", # used by Java Buildpack
+        "NODE_ENV", # used by Node.js Buildpack
+        "WEBDIR", # used by PHP Buildpack
+        "WEB_CONCURRENCY", # used by Node.js Buildpack
+        "WEB_MEMORY", # used by Node.js Buildpack
+        "WEB_SERVER", # used by PHP Buildpack
         ]
-ANON_JBP=environ.get("ANON_JBP")
+ANON_BP_VARS=environ.get("ANON_BP_VARS")
 BYPASS_ANON=environ.get("BYPASS_ANON")
 
 def main():
@@ -247,18 +256,18 @@ def _flatten_variables(vars: Optional[Dict]) -> List[str]:
     For most environment variables, only environment variable keys
     (NOT values) are collected in an sha256-anonymized list.
 
-    A selection of Java Buildpack configuration environment variables
-    (defined in NO_ANON_JPB_VARS, above) are NOT anonymized AND
+    A selection of buildpack-configuration environment variables
+    (defined in NO_ANON_VARS, above) are NOT anonymized AND
     values are collected in addition to keys.
 
-    The Java Buildpack configuration environment variables can be anonymized
-    by setting the ANON_JBP environment variable in the execution shell when
+    The buildpack-configuration environment variables can be anonymized by
+    setting the ANON_BP_VARS environment variable in the execution shell when
     running this script.
     """
     flattened_vars = []
     if vars:
         for key, val in vars.items():
-            if ((not ANON_JBP) and (key in NO_ANON_JPB_VARS)):
+            if ((not ANON_BP_VARS) and (key in NO_ANON_VARS)):
                 flattened_vars.append(key + "=" + val)
             else:
                 flattened_vars.append(_anonymize(key))
