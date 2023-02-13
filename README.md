@@ -1,13 +1,14 @@
 # buildpack-sniffer
 Sniff out what buildpacks are in use (and how) on a given Cloud Foundry
 deployment. This tool is intended to help understand how easy it will be to
-migrate Cloud Foundry applications to v3 buildpacks.
+migrate Cloud Foundry applications to v3 buildpacks (aka [Cloud Native
+Buildpacks](https://buildpacks.io/)).
 
 ## Usage
 
 ### Requirements
 
-Currently, this script depends on the following (these may relax over time):
+This script depends on the following:
 - Python 3.5+
 - `cf` CLI targeting desired Cloud Foundry environment and logged in as an
   `admin` or `admin_read_only` user
@@ -20,7 +21,7 @@ Currently, this script depends on the following (these may relax over time):
 
 ### Output
 
-Output will be in `./output.json`
+Output will be in `./output.json` in your current working directory.
 
 Data collected for all apps:
 - guid
@@ -34,7 +35,7 @@ Data collected for all apps:
 - App service bindings (name, label, and tags)
 
 The following fields will be anonymized by taking a sha256 hash of the values:
-- Environment variable names (excluding a small set of buildpack-related variables (see below))
+- Environment variables (excluding a small set of buildpack-related variables (see below))
 - Service binding names, labels, and tags
 
 The un-anonymized environment variables and values that are collected are as follows:
@@ -115,32 +116,37 @@ BYPASS_ANON=1 ./main.py
 ## Running on Cloud Foundry
 
 For a controlled environment with the required dependencies (python and cf
-CLI), you can run the script on a Cloud Foundry component VM:
+CLI), you can run the script on a Cloud Foundry component VM as follows:
 
-1. ssh onto a bosh instance with the cf CLI. A good way to get it is via the
-   `cf-cli` bosh release. For example, in TAS, a `compute` or `clock_global`
-   instance: `bosh ssh clock_global`.
-1. `sudo su vcap`
+1. ssh onto a bosh instance containing the cf CLI. A good way to get the CLI is
+   via the [`cf-cli` bosh
+   release](https://github.com/bosh-packages/cf-cli-release). For example, the
+   `compute` or `clock_global` instance in
+   [TAS](https://tanzu.vmware.com/application-service) (instance name depends
+   on configuration): `bosh ssh clock_global`
+1. Switch to the "vcap" user: `sudo su vcap`
 1. Change into a directory owned by vcap (so we can retrieve the output file
    later). For example: `cd /var/vcap/data/cloud_controller_clock/tmp/`.
-1. `wget https://raw.githubusercontent.com/Gerg/buildpack-sniffer/main/main.py`
-1. `chmod +x main.py`
-1. Get cf CLI on your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
+1. Download this script: `wget https://raw.githubusercontent.com/Gerg/buildpack-sniffer/main/main.py`
+1. Make the script executable: `chmod +x main.py`
+1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
    (The exact path for the CLI may differ, depending on your deployment.)
-1. `cf api <target api>`
-1. Log in with admin_read_only credentials: `cf login`
-1. `./main.py`
-1. This will generate an `output.json` in the same directory
+1. Target the desired Cloud Foundry API with the CLI: `cf api <target api>`
+1. Log in with admin_read_only or admin credentials: `cf login`
+1. Execute the script: `./main.py`
+1. The script will generate an `output.json` in your current directory
 1. Exit the bosh instance
-1. Bosh SCP the file off of the instance. For example: `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
+1. Bosh SCP the file off of the instance. For example:
+   `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
 
-Running from within the bosh deployment also reduces network latency, which can
-speed up execution time.
+As an additional benefit, running from within the bosh deployment also reduces
+network latency, which can significantly speed up execution time.
 
 ## Performance
 
 Performance for a trial against an environment seeded with 10,000 apps (NOT app
-instances), when run on a bosh instance (jammy stemcell), as described above:
+instances), when run on a bosh instance (jammy stemcell), using the procedure
+described above:
 - Execution time: ~30 minutes
 - Memory consumption: ~110M
 - CPU consumption: ~1.4% of 2.20GHz CPU
