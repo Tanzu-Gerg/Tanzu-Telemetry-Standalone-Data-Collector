@@ -8,22 +8,23 @@ from os import environ
 from types import SimpleNamespace
 from typing import List, Dict, Optional
 
+
 class AppLifecycle(SimpleNamespace):
     # type: str
     # buildpacks: List[str]
     # stack: str
 
     def as_dict(self) -> Dict:
-       """Define how app lifecycles will be rendered as JSON."""
-       return self.__dict__
+        """Define how app lifecycles will be rendered as JSON."""
+        return self.__dict__
 
 
 class Droplet(SimpleNamespace):
     # buildpacks: List[Dict[str, str]]
 
     def as_dict(self) -> Dict:
-       """Define how droplets will be rendered as JSON."""
-       return self.__dict__
+        """Define how droplets will be rendered as JSON."""
+        return self.__dict__
 
 
 class Service(SimpleNamespace):
@@ -32,8 +33,8 @@ class Service(SimpleNamespace):
     # name: str
 
     def as_dict(self) -> Dict:
-       """Define how services will be rendered as JSON."""
-       return self.__dict__
+        """Define how services will be rendered as JSON."""
+        return self.__dict__
 
 
 class Env(SimpleNamespace):
@@ -50,6 +51,7 @@ class Env(SimpleNamespace):
                 "running_env": self.running_env,
                 "environment_variables": self.environment_variables,
                 }
+
 
 class App(SimpleNamespace):
     # guid: str
@@ -68,6 +70,7 @@ class App(SimpleNamespace):
                 "env": self.env.as_dict() if self.env else None,
                 }
 
+
 ALERT = """
 ====================================================================
  ALERT: You must target the desired environment with 'cf' CLI,
@@ -75,23 +78,24 @@ ALERT = """
 ====================================================================
 """
 
-PAGE_SIZE=5000
+PAGE_SIZE = 5000
 NO_ANON_VARS = [
-        "BP_PIP_VERSION", # used by Python Buildpack
-        "CACHE_NUGET_PACKAGES", # used by .NET Core Buildpack
-        "EXTENSIONS", # used by PHP Buildpack
-        "GOVERSION", # used by Go Buildpack
-        "JBP_CONFIG_COMPONENTS", # used by Java Buildpack
-        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION", # used by Java Buildpack
-        "JBP_DEFAULT_COMPONENTS", # used by Java Buildpack
-        "NODE_ENV", # used by Node.js Buildpack
-        "WEBDIR", # used by PHP Buildpack
-        "WEB_CONCURRENCY", # used by Node.js Buildpack
-        "WEB_MEMORY", # used by Node.js Buildpack
-        "WEB_SERVER", # used by PHP Buildpack
+        "BP_PIP_VERSION",  # used by Python Buildpack
+        "CACHE_NUGET_PACKAGES",  # used by .NET Core Buildpack
+        "EXTENSIONS",  # used by PHP Buildpack
+        "GOVERSION",  # used by Go Buildpack
+        "JBP_CONFIG_COMPONENTS",  # used by Java Buildpack
+        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION",  # used by Java Buildpack
+        "JBP_DEFAULT_COMPONENTS",  # used by Java Buildpack
+        "NODE_ENV",  # used by Node.js Buildpack
+        "WEBDIR",  # used by PHP Buildpack
+        "WEB_CONCURRENCY",  # used by Node.js Buildpack
+        "WEB_MEMORY",  # used by Node.js Buildpack
+        "WEB_SERVER",  # used by PHP Buildpack
         ]
-ANON_BP_VARS=environ.get("ANON_BP_VARS")
-BYPASS_ANON=environ.get("BYPASS_ANON")
+ANON_BP_VARS = environ.get("ANON_BP_VARS")
+BYPASS_ANON = environ.get("BYPASS_ANON")
+
 
 def main():
     """Collect all visible apps, then fetch the current droplet and environment
@@ -105,7 +109,7 @@ def main():
         all_apps = _fetch_env(all_apps)
 
     print("Generating output...")
-    app_json = json.dumps([ app.as_dict() for app in all_apps ])
+    app_json = json.dumps([app.as_dict() for app in all_apps])
 
     print("Writing output...")
     with open("output.json", "w", encoding="utf-8") as f:
@@ -134,7 +138,6 @@ def _fetch_apps() -> List[App]:
 
         parsed_apps_response = _parse_json(apps_response_raw)
 
-        errors = parsed_apps_response.get("errors", None)
         _handle_errors(parsed_apps_response)
         apps_pagination = parsed_apps_response.get("pagination", {})
         total_app_pages = apps_pagination.get("total_pages", "?")
@@ -186,7 +189,7 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
             universal_newlines=True
         ).stdout
         parsed_droplet_response = _parse_json(droplet_response_raw)
-        app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get('buildpacks', []))
+        app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get("buildpacks", []))
     print("\n")
     return all_apps
 
@@ -274,7 +277,7 @@ def _flatten_variables(vars: Optional[Dict]) -> List[str]:
     return flattened_vars
 
 
-def _anonymize_list(list_of_str: List[str]) -> str:
+def _anonymize_list(list_of_str: List[str]) -> List[str]:
     """Anonymize all strings in a list."""
     return [_anonymize(string) for string in list_of_str]
 
@@ -293,7 +296,8 @@ def _anonymize(string: str) -> str:
     If the BYPASS_ANON environment variable is set in the execution shell when
     running this script, then values will not be anonymized.
     """
-    if BYPASS_ANON: return string
+    if BYPASS_ANON:
+        return string
     return hashlib.sha256(bytes(string, "utf-8")).hexdigest()
 
 
