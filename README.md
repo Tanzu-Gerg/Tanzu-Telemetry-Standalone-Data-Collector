@@ -103,16 +103,18 @@ Example output:
       ],
       "staging_env": [
         "e919a75364398a449f860aeadddc57fa0502145a4e63959ddb33c417a48dc0da",
-        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}"
-      ],
-      "running_env": [
-        "c071cf5f5ed6f884cc70155b6f05f755fd46a302d05e4261b7e92ce878bbfed8",
-        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}"
-      ],
-      "environment_variables": [
+        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}",
         "a11b705f50010a321815b0a0aca534ab7aa89d597f32db9ffc7df459c8d61360",
         "JBP_CONFIG_COMPONENTS={jres: [\"JavaBuildpack::Jre::OpenJdkJRE\"]}",
         "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION={enabled: false}"
+      ],
+      "running_env": [
+        "c071cf5f5ed6f884cc70155b6f05f755fd46a302d05e4261b7e92ce878bbfed8",
+        "JBP_DEFAULT_COMPONENTS={jres: [\"JavaBuildpack::Jre::ZuluJRE\"]}",
+        "a11b705f50010a321815b0a0aca534ab7aa89d597f32db9ffc7df459c8d61360",
+        "JBP_CONFIG_COMPONENTS={jres: [\"JavaBuildpack::Jre::OpenJdkJRE\"]}",
+        "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION={enabled: false}",
+        "e919a75364398a449f860aeadddc57fa0502145a4e63959ddb33c417a48dc0da"
       ]
     },
     "process": {

@@ -48,7 +48,6 @@ class Env(SimpleNamespace):
     vcap_services: List[Service]
     staging_env: List[str]
     running_env: List[str]
-    environment_variables: List[str]
     """
 
     def as_dict(self) -> Dict:
@@ -57,7 +56,6 @@ class Env(SimpleNamespace):
                 "vcap_services": [service.as_dict() for service in self.vcap_services],
                 "staging_env": self.staging_env,
                 "running_env": self.running_env,
-                "environment_variables": self.environment_variables,
                 }
 
 
@@ -244,17 +242,20 @@ def _construct_env(env: Dict) -> Env:
     """Convert API env dict into Env object, containing environment variables
     from VCAP_SERVICES, staging environment variable groups, running
     environment variable groups, and environment variables configured directly
-    on the app. Environment variables are mostly anonymized, as described below.
+    on the app. Environment variables are merged by whether they are present at
+    staging or running time. Most environment variables are anonymized, as
+    described below.
     """
     vcap_services = env.get('system_env_json', {}).get('VCAP_SERVICES', {})
-    staging_env_json = env.get('staging_env_json', {})
-    running_env_json = env.get('running_env_json', {})
-    environment_variables = env.get('environment_variables', {})
+    staging_env_json = env.get('staging_env_json', {}) or {}
+    running_env_json = env.get('running_env_json', {}) or {}
+    environment_variables = env.get('environment_variables', {}) or {}
+    staging_env = _flatten_variables(_merge(staging_env_json, environment_variables))
+    running_env = _flatten_variables(_merge(running_env_json, environment_variables))
     return Env(
             vcap_services=_construct_services(vcap_services),
-            staging_env=_flatten_variables(staging_env_json),
-            running_env=_flatten_variables(running_env_json),
-            environment_variables=_flatten_variables(environment_variables),
+            staging_env=staging_env,
+            running_env=running_env,
             )
 
 
@@ -276,6 +277,11 @@ def _construct_services(vcap_services: Optional[Dict]) -> List[Service]:
         return all_services
     else:
         return []
+
+
+def _merge(base: dict, override: dict) -> dict:
+    """Merge two dicts, overriding values from the first dict."""
+    return {**base, **override}
 
 
 def _flatten_variables(variables: Optional[Dict]) -> List[str]:
