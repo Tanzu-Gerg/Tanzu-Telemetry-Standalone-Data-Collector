@@ -37,7 +37,7 @@ Data collected for all apps with state `STARTED`:
 The start command fragments that will be collected are (nothing else from
 process start commands are collected):
 - `open_jdk_jre/bin/java `
-- `springframework.boot.lader.JarLauncher`
+- `springframework.boot.loader.JarLauncher`
 - `groovy/bin/groovy `
 - `spring_boot_cli/bin/spring run`
 - `tomcat/bin/catalina.sh run`

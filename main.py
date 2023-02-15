@@ -115,10 +115,10 @@ NO_ANON_VARS = [
         "WEB_SERVER",  # used by PHP Buildpack
         ]
 
-# Start command fragments to collect (se below)
+# Start command fragments to collect (see below)
 COMMAND_FRAGMENTS = [
         "open_jdk_jre/bin/java ",
-        "springframework.boot.lader.JarLauncher",
+        "springframework.boot.loader.JarLauncher",
         "groovy/bin/groovy ",
         "spring_boot_cli/bin/spring run",
         "tomcat/bin/catalina.sh run",
