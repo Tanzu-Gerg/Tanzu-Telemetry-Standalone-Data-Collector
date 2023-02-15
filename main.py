@@ -84,7 +84,7 @@ class App(SimpleNamespace):
     def as_dict(self) -> Dict:
         """Define how Apps will be rendered as JSON."""
         return {
-                "guid": self.guid,
+                "guid": _anonymize(self.guid),
                 "state": self.state,
                 "lifecycle": self.lifecycle.as_dict(),
                 "current_droplet": self.current_droplet.as_dict() if self.current_droplet else None,

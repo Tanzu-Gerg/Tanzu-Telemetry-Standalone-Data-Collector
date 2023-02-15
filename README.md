@@ -26,8 +26,8 @@ Output will be in `./output.json` in your current working directory.
 Data collected for all apps:
 - guid
 - state
-- lifecycle type
-- lifecycle buildpacks
+- lifecycle type (buildpack or docker)
+- lifecycle buildpacks (user-requested buildpacks)
 - lifecycle stack
 - current droplet's detected buildpack
 - environment variable names (in most cases, values are not collected)
@@ -44,10 +44,12 @@ process start commands are collected):
 - `tomcat/bin/catalina.sh run`
 
 The following fields will be anonymized by taking a sha256 hash of the values:
-- Environment variables (excluding a small set of buildpack-related variables (see below))
-- Service binding names, labels, and tags
+- app guids
+- environment variables (excluding a small set of buildpack-related variables (see below))
+- service binding names, labels, and tags
 
-The un-anonymized environment variables and values that are collected are as follows:
+The un-anonymized environment variable names AND values that are collected are
+as follows:
 - `BP_PIP_VERSION` used by Python Buildpack
 - `CACHE_NUGET_PACKAGES` used by .NET Core Buildpack
 - `EXTENSIONS` used by PHP Buildpack
@@ -65,7 +67,7 @@ Example output:
 ```json
 [
   {
-    "guid": "69088a94-fe86-4a8c-9695-c4861d020dce",
+    "guid": "51a53d85d9546ef8bdd34d47d44b322e4f6a8b0488ccce6f1e7a8ce48d4e51e1",
     "state": "STARTED",
     "lifecycle": {
       "type": "buildpack",
