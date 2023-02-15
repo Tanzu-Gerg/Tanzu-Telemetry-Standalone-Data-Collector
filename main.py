@@ -72,7 +72,6 @@ class Process(SimpleNamespace):
 class App(SimpleNamespace):
     """
     guid: str
-    state: str
     lifecycle: AppLifecycle
     current_droplet: Optional[Droplet] = None
     env: Optional[Env] = None
@@ -83,7 +82,6 @@ class App(SimpleNamespace):
         """Define how Apps will be rendered as JSON."""
         return {
                 "guid": _anonymize(self.guid),
-                "state": self.state,
                 "lifecycle": self.lifecycle.as_dict(),
                 "current_droplet": self.current_droplet.as_dict() if self.current_droplet else None,
                 "env": self.env.as_dict() if self.env else None,
@@ -157,8 +155,8 @@ def main():
 
 def _fetch_apps() -> List[App]:
     """Fetch the first page of apps from the API (via 'cf curl') and build a
-    list of STARTED App objects containing guid, state, and lifecycle. Then
-    repeat for each page of apps, until there are no additional pages of apps.
+    list of STARTED App objects containing guid and lifecycle. Then repeat for
+    each page of apps, until there are no additional pages of apps.
     """
     print("[Step 1/4] Fetching started apps...")
 
@@ -179,7 +177,6 @@ def _fetch_apps() -> List[App]:
         parsed_apps = [
             App(
                 guid=app.get("guid", ""),
-                state=app.get("state", ""),
                 lifecycle=_construct_lifecycle(app)
             )
             for app in apps

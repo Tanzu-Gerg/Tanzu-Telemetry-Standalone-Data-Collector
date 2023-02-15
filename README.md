@@ -25,7 +25,6 @@ Output will be in `./output.json` in your current working directory.
 
 Data collected for all apps with state `STARTED`:
 - guid
-- state
 - lifecycle type (buildpack or docker)
 - lifecycle buildpacks (user-requested buildpacks)
 - lifecycle stack
@@ -68,7 +67,6 @@ Example output:
 [
   {
     "guid": "51a53d85d9546ef8bdd34d47d44b322e4f6a8b0488ccce6f1e7a8ce48d4e51e1",
-    "state": "STARTED",
     "lifecycle": {
       "type": "buildpack",
       "buildpacks": [],
