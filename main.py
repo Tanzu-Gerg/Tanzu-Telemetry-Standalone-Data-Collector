@@ -169,14 +169,9 @@ def _fetch_apps() -> List[App]:
     all_apps = []
     while True:
         print("Fetching apps page " + str(current_app_page) + "/" + str(total_app_pages), end="\r")
-        apps_response_raw = subprocess.run(
-            ["cf", "curl", "/v3/apps?per_page=" + str(PAGE_SIZE) + ";page=" + str(current_app_page)],
-            check=True,
-            stdout=subprocess.PIPE,
-            universal_newlines=True
-        ).stdout
-
-        parsed_apps_response = _parse_json(apps_response_raw)
+        parsed_apps_response = _cf_curl(
+                "/v3/apps?per_page=" + str(PAGE_SIZE) + ";page=" + str(current_app_page),
+                )
 
         _handle_errors(parsed_apps_response)
         apps_pagination = parsed_apps_response.get("pagination", {})
@@ -223,13 +218,7 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
     print("[Step 2/4] Fetching droplets...")
     for index, app in enumerate(all_apps):
         print("Fetching droplet " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
-        droplet_response_raw = subprocess.run(
-            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/droplets/current"],
-            check=True,
-            stdout=subprocess.PIPE,
-            universal_newlines=True
-        ).stdout
-        parsed_droplet_response = _parse_json(droplet_response_raw)
+        parsed_droplet_response = _cf_curl("/v3/apps/" + str(app.guid) + "/droplets/current")
         app.current_droplet = Droplet(buildpacks=parsed_droplet_response.get("buildpacks", []))
     print("\n")
     return all_apps
@@ -245,13 +234,7 @@ def _fetch_env(all_apps: List[App]) -> List[App]:
     print("[Step 3/4] Fetching environment variables...")
     for index, app in enumerate(all_apps):
         print("Fetching env " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
-        env_response_raw = subprocess.run(
-            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/env"],
-            check=True,
-            stdout=subprocess.PIPE,
-            universal_newlines=True
-        ).stdout
-        parsed_env_response = _parse_json(env_response_raw)
+        parsed_env_response = _cf_curl("/v3/apps/" + str(app.guid) + "/env")
         app.env = _construct_env(parsed_env_response)
     print("\n")
     return all_apps
@@ -352,13 +335,7 @@ def _fetch_processes(all_apps: List[App]) -> List[App]:
     print("[Step 4/4] Fetching processes...")
     for index, app in enumerate(all_apps):
         print("Fetching process " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
-        process_response_raw = subprocess.run(
-            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/processes/web"],
-            check=True,
-            stdout=subprocess.PIPE,
-            universal_newlines=True
-        ).stdout
-        parsed_process_response = _parse_json(process_response_raw)
+        parsed_process_response = _cf_curl("/v3/apps/" + str(app.guid) + "/processes/web")
         app.process = _construct_process(parsed_process_response)
     print("\n")
     return all_apps
@@ -375,6 +352,17 @@ def _construct_process(process: Dict) -> Process:
     return Process(
             command_fragments=matching_command_fragments
             )
+
+
+def _cf_curl(endpoint: str) -> dict:
+    """Curl the API by shelling out to the cf CLI."""
+    response_raw = subprocess.run(
+        ["cf", "curl", endpoint],
+        check=True,
+        stdout=subprocess.PIPE,
+        universal_newlines=True
+    ).stdout
+    return _parse_json(response_raw)
 
 
 def _parse_json(raw_response: str) -> dict:
