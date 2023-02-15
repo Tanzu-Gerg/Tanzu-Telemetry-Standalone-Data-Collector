@@ -10,9 +10,11 @@ from typing import List, Dict, Optional
 
 
 class AppLifecycle(SimpleNamespace):
-    # type: str
-    # buildpacks: List[str]
-    # stack: str
+    """
+    type: str
+    buildpacks: List[str]
+    stack: str
+    """
 
     def as_dict(self) -> Dict:
         """Define how app lifecycles will be rendered as JSON."""
@@ -20,7 +22,9 @@ class AppLifecycle(SimpleNamespace):
 
 
 class Droplet(SimpleNamespace):
-    # buildpacks: List[Dict[str, str]]
+    """
+    buildpacks: List[Dict[str, str]]
+    """
 
     def as_dict(self) -> Dict:
         """Define how droplets will be rendered as JSON."""
@@ -28,9 +32,11 @@ class Droplet(SimpleNamespace):
 
 
 class Service(SimpleNamespace):
-    # label: str
-    # tags: List[str]
-    # name: str
+    """
+    label: str
+    tags: List[str]
+    name: str
+    """
 
     def as_dict(self) -> Dict:
         """Define how services will be rendered as JSON."""
@@ -38,10 +44,12 @@ class Service(SimpleNamespace):
 
 
 class Env(SimpleNamespace):
-    # vcap_services: List[Service]
-    # staging_env: List[str]
-    # running_env: List[str]
-    # environment_variables: List[str]
+    """
+    vcap_services: List[Service]
+    staging_env: List[str]
+    running_env: List[str]
+    environment_variables: List[str]
+    """
 
     def as_dict(self) -> Dict:
         """Define how environment variables will be rendered as JSON."""
@@ -53,12 +61,25 @@ class Env(SimpleNamespace):
                 }
 
 
+class Process(SimpleNamespace):
+    """
+    command_fragments: List(str)
+    """
+
+    def as_dict(self) -> Dict:
+        """Define how processes will be rendered as JSON."""
+        return self.__dict__
+
+
 class App(SimpleNamespace):
-    # guid: str
-    # state: str
-    # lifecycle: AppLifecycle
-    # current_droplet: Optional[Droplet] = None
-    # env: Optional[Env] = None
+    """
+    guid: str
+    state: str
+    lifecycle: AppLifecycle
+    current_droplet: Optional[Droplet] = None
+    env: Optional[Env] = None
+    process: Optional[Process] = None
+    """
 
     def as_dict(self) -> Dict:
         """Define how Apps will be rendered as JSON."""
@@ -68,6 +89,7 @@ class App(SimpleNamespace):
                 "lifecycle": self.lifecycle.as_dict(),
                 "current_droplet": self.current_droplet.as_dict() if self.current_droplet else None,
                 "env": self.env.as_dict() if self.env else None,
+                "process": self.process.as_dict() if self.process else None,
                 }
 
 
@@ -78,7 +100,10 @@ ALERT = """
 ====================================================================
 """
 
+# Number of resources to fetch per page on the API
 PAGE_SIZE = 5000
+
+# Environment variables to not anonymize (see below)
 NO_ANON_VARS = [
         "BP_PIP_VERSION",  # used by Python Buildpack
         "CACHE_NUGET_PACKAGES",  # used by .NET Core Buildpack
@@ -93,20 +118,34 @@ NO_ANON_VARS = [
         "WEB_MEMORY",  # used by Node.js Buildpack
         "WEB_SERVER",  # used by PHP Buildpack
         ]
+
+# Start command fragments to collect (se below)
+COMMAND_FRAGMENTS = [
+        "open_jdk_jre/bin/java ",
+        "springframework.boot.lader.JarLauncher",
+        "groovy/bin/groovy ",
+        "spring_boot_cli/bin/spring run",
+        "tomcat/bin/catalina.sh run",
+        ]
+
+# If set, anonymize environment variables from NO_ANON_VARS
 ANON_BP_VARS = environ.get("ANON_BP_VARS")
+
+# If set, anonymize nothing
 BYPASS_ANON = environ.get("BYPASS_ANON")
 
 
 def main():
-    """Collect all visible apps, then fetch the current droplet and environment
-    variables for each app. Render the resulting data as JSON and write to an
-    output file in the current directory.
+    """Collect all visible apps, then fetch the current droplet, environment
+    variables, and web process for each app. Render the resulting data as JSON
+    and write to an output file in the current directory.
     """
     print(ALERT)
     all_apps = _fetch_apps()
     if len(all_apps):
         all_apps = _fetch_droplets(all_apps)
         all_apps = _fetch_env(all_apps)
+        all_apps = _fetch_processes(all_apps)
 
     print("Generating output...")
     app_json = json.dumps([app.as_dict() for app in all_apps])
@@ -123,7 +162,7 @@ def _fetch_apps() -> List[App]:
     list of App objects containing guid, state, and lifecycle. Then repeat for
     each page of apps, until there are no additional pages of apps.
     """
-    print("[Step 1/3] Fetching all apps...")
+    print("[Step 1/4] Fetching all apps...")
 
     current_app_page = 1
     total_app_pages = "1"
@@ -132,6 +171,7 @@ def _fetch_apps() -> List[App]:
         print("Fetching apps page " + str(current_app_page) + "/" + str(total_app_pages), end="\r")
         apps_response_raw = subprocess.run(
             ["cf", "curl", "/v3/apps?per_page=" + str(PAGE_SIZE) + ";page=" + str(current_app_page)],
+            check=True,
             stdout=subprocess.PIPE,
             universal_newlines=True
         ).stdout
@@ -180,11 +220,12 @@ def _fetch_droplets(all_apps: List[App]) -> List[App]:
     Droplet object, containing the buildpacks detected during staging. Add the
     constructed Droplet object to the corresponding App object.
     """
-    print("[Step 2/3] Fetching droplets...")
+    print("[Step 2/4] Fetching droplets...")
     for index, app in enumerate(all_apps):
         print("Fetching droplet " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         droplet_response_raw = subprocess.run(
             ["cf", "curl", "/v3/apps/" + str(app.guid) + "/droplets/current"],
+            check=True,
             stdout=subprocess.PIPE,
             universal_newlines=True
         ).stdout
@@ -201,11 +242,12 @@ def _fetch_env(all_apps: List[App]) -> List[App]:
     resulting JSON to construct an Env object containing these environment
     variables. Add the constructed Env object to the corresponding App object.
     """
-    print("[Step 3/3] Fetching environment variables...")
+    print("[Step 3/4] Fetching environment variables...")
     for index, app in enumerate(all_apps):
         print("Fetching env " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
         env_response_raw = subprocess.run(
             ["cf", "curl", "/v3/apps/" + str(app.guid) + "/env"],
+            check=True,
             stdout=subprocess.PIPE,
             universal_newlines=True
         ).stdout
@@ -253,7 +295,7 @@ def _construct_services(vcap_services: Optional[Dict]) -> List[Service]:
         return []
 
 
-def _flatten_variables(vars: Optional[Dict]) -> List[str]:
+def _flatten_variables(variables: Optional[Dict]) -> List[str]:
     """Convert environment variable dict into a list of strings.
 
     For most environment variables, only environment variable keys
@@ -268,8 +310,8 @@ def _flatten_variables(vars: Optional[Dict]) -> List[str]:
     running this script.
     """
     flattened_vars = []
-    if vars:
-        for key, val in vars.items():
+    if variables:
+        for key, val in variables.items():
             if ((not ANON_BP_VARS) and (key in NO_ANON_VARS)):
                 flattened_vars.append(key + "=" + val)
             else:
@@ -299,6 +341,40 @@ def _anonymize(string: str) -> str:
     if BYPASS_ANON:
         return string
     return hashlib.sha256(bytes(string, "utf-8")).hexdigest()
+
+
+def _fetch_processes(all_apps: List[App]) -> List[App]:
+    """For each app, fetch that app's web process via
+    '/v3/apps/:guid/processes/web'. Use the resulting JSON to construct a
+    Process object, containing matching start command fragments. Add the
+    constructed Process object to the corresponding App object.
+    """
+    print("[Step 4/4] Fetching processes...")
+    for index, app in enumerate(all_apps):
+        print("Fetching process " + str(index + 1) + "/" + str(len(all_apps)), end="\r")
+        process_response_raw = subprocess.run(
+            ["cf", "curl", "/v3/apps/" + str(app.guid) + "/processes/web"],
+            check=True,
+            stdout=subprocess.PIPE,
+            universal_newlines=True
+        ).stdout
+        parsed_process_response = _parse_json(process_response_raw)
+        app.process = _construct_process(parsed_process_response)
+    print("\n")
+    return all_apps
+
+
+def _construct_process(process: Dict) -> Process:
+    """Convert API process dict into Process object, containing matching start
+    command fragments from COMMAND_FRAGMENTS, defined above. Only the matching
+    start command fragments are recorded; the rest of the start command is NOT
+    recorded.
+    """
+    command = process.get('command', "")
+    matching_command_fragments = [fragment for fragment in COMMAND_FRAGMENTS if fragment in command]
+    return Process(
+            command_fragments=matching_command_fragments
+            )
 
 
 def _parse_json(raw_response: str) -> dict:

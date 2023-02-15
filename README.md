@@ -10,7 +10,7 @@ Buildpacks](https://buildpacks.io/)).
 
 This script depends on the following:
 - Python 3.5+
-- `cf` CLI targeting desired Cloud Foundry environment and logged in as an
+- `cf` CLI targeting desired Cloud Foundry deployment and logged in as an
   `admin` or `admin_read_only` user
 - Cloud Foundry version that includes the v3 API
 
@@ -30,9 +30,18 @@ Data collected for all apps:
 - lifecycle buildpacks
 - lifecycle stack
 - current droplet's detected buildpack
-- Environment variable names (in most cases, values are not collected)
-- Environment variable values for a small set of buildpack-related variables (see below)
-- App service bindings (name, label, and tags)
+- environment variable names (in most cases, values are not collected)
+- environment variable values for a small set of buildpack-related variables (see below)
+- app service bindings (name, label, and tags)
+- matching start command fragments from the web process (see below)
+
+The start command fragments that will be collected are (nothing else from
+process start commands are collected):
+- `open_jdk_jre/bin/java `
+- `springframework.boot.lader.JarLauncher`
+- `groovy/bin/groovy `
+- `spring_boot_cli/bin/spring run`
+- `tomcat/bin/catalina.sh run`
 
 The following fields will be anonymized by taking a sha256 hash of the values:
 - Environment variables (excluding a small set of buildpack-related variables (see below))
@@ -78,7 +87,16 @@ Example output:
         {
           "name": "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
           "label": "6351e758fb69733d7d4ec5faea3cf7c2b1494db263eb0c0a2c889b2578114ec4",
-          "tags": ["798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7"]
+          "tags": [
+            "798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7"
+          ]
+        },
+        {
+          "name": "be9b4c9674ae3932cf382b362458d6107e9433d1d9e05bef3eef187bb7785c05",
+          "label": "6351e758fb69733d7d4ec5faea3cf7c2b1494db263eb0c0a2c889b2578114ec4",
+          "tags": [
+            "798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7"
+          ]
         }
       ],
       "staging_env": [
@@ -94,6 +112,11 @@ Example output:
         "JBP_CONFIG_COMPONENTS={jres: [\"JavaBuildpack::Jre::OpenJdkJRE\"]}",
         "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION={enabled: false}"
       ]
+    },
+    "process": {
+      "command_fragments": [
+        "tomcat/bin/catalina.sh run"
+      ]
     }
   }
 ]
@@ -101,7 +124,7 @@ Example output:
 
 ### Configuration
 
-Environment variables:
+Environment variables (set in the shell executing the script):
 
 |Var|Effect|
 |-|-|
@@ -146,7 +169,10 @@ network latency, which can significantly speed up execution time.
 
 ## Performance
 
-Performance for a trial against an environment seeded with 10,000 apps (NOT app
+_This data was gathered prior to collecting process-level data and it out of
+date. It will be updated to reflect new behavior shortly._
+
+Performance for a trial against a deployment seeded with 10,000 apps (NOT app
 instances), when run on a bosh instance (jammy stemcell), using the procedure
 described above:
 - Execution time: ~30 minutes
