@@ -5,7 +5,7 @@ RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get install python3.5
 WORKDIR /tmp
 USER root
-COPY ./main.py ./
+COPY ./tanzu-telemetry-standalone-data-collector.py ./
 COPY ./test.sh ./
 COPY ./cf ./
 ENV PATH="$PATH:/tmp"

@@ -4,5 +4,5 @@ set -e
 
 cf api $CF_API --skip-ssl-validation
 cf auth $CF_USER $CF_PASSWORD
-./main.py
+./tanzu-telemetry-standalone-data-collector.py
 cat ./output.json
