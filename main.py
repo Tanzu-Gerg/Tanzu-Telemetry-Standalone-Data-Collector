@@ -134,9 +134,9 @@ BYPASS_ANON = environ.get("BYPASS_ANON")
 
 
 def main():
-    """Collect all visible apps, then fetch the current droplet, environment
-    variables, and web process for each app. Render the resulting data as JSON
-    and write to an output file in the current directory.
+    """Collect all visible STARTED apps, then fetch the current droplet,
+    environment variables, and web process for each app. Render the resulting
+    data as JSON and write to an output file in the current directory.
     """
     print(ALERT)
     all_apps = _fetch_apps()
@@ -157,10 +157,10 @@ def main():
 
 def _fetch_apps() -> List[App]:
     """Fetch the first page of apps from the API (via 'cf curl') and build a
-    list of App objects containing guid, state, and lifecycle. Then repeat for
-    each page of apps, until there are no additional pages of apps.
+    list of STARTED App objects containing guid, state, and lifecycle. Then
+    repeat for each page of apps, until there are no additional pages of apps.
     """
-    print("[Step 1/4] Fetching all apps...")
+    print("[Step 1/4] Fetching started apps...")
 
     current_app_page = 1
     total_app_pages = "1"
@@ -183,6 +183,7 @@ def _fetch_apps() -> List[App]:
                 lifecycle=_construct_lifecycle(app)
             )
             for app in apps
+            if app.get("state", "") == "STARTED"
         ]
         all_apps = all_apps + parsed_apps
 

@@ -23,7 +23,7 @@ This script depends on the following:
 
 Output will be in `./output.json` in your current working directory.
 
-Data collected for all apps:
+Data collected for all apps with state `STARTED`:
 - guid
 - state
 - lifecycle type (buildpack or docker)
