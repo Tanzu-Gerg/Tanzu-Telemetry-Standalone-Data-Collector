@@ -171,16 +171,13 @@ network latency, which can significantly speed up execution time.
 
 ## Performance
 
-_This data was gathered prior to collecting process-level data and it out of
-date. It will be updated to reflect new behavior shortly._
-
 Performance for a trial against a deployment seeded with 10,000 apps (NOT app
 instances), when run on a bosh instance (jammy stemcell), using the procedure
 described above:
-- Execution time: ~30 minutes
+- Execution time: ~40 minutes
 - Memory consumption: ~110M
 - CPU consumption: ~1.4% of 2.20GHz CPU
-- Output file size: ~7.3M
+- Output file size: ~8.7M
 
 ## Development
 
