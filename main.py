@@ -137,23 +137,27 @@ def main():
     data as JSON and write to an output file in the current directory.
     """
     print(ALERT)
-    all_apps = _fetch_apps()
-    if len(all_apps):
-        all_apps = _fetch_droplets(all_apps)
-        all_apps = _fetch_env(all_apps)
-        all_apps = _fetch_processes(all_apps)
+    all_apps = []
+    try:
+        all_apps = _fetch_apps(all_apps)
+        if all_apps:
+            all_apps = _fetch_droplets(all_apps)
+            all_apps = _fetch_env(all_apps)
+            all_apps = _fetch_processes(all_apps)
+    except Exception as err:
+        print("\n\n[Error] Encountered exception when collecting data:\n" + str(err) + "\nWriting partial output...\n")
 
     print("Generating output...")
     app_json = json.dumps([app.as_dict() for app in all_apps])
 
     print("Writing output...")
-    with open("output.json", "w", encoding="utf-8") as f:
-        f.writelines(app_json)
+    with open("output.json", "w", encoding="utf-8") as output_file:
+        output_file.writelines(app_json)
 
     print("Done!")
 
 
-def _fetch_apps() -> List[App]:
+def _fetch_apps(all_apps: List[App]) -> List[App]:
     """Fetch the first page of apps from the API (via 'cf curl') and build a
     list of STARTED App objects containing guid and lifecycle. Then repeat for
     each page of apps, until there are no additional pages of apps.
@@ -162,7 +166,6 @@ def _fetch_apps() -> List[App]:
 
     current_app_page = 1
     total_app_pages = "1"
-    all_apps = []
     while True:
         print("Fetching apps page " + str(current_app_page) + "/" + str(total_app_pages), end="\r")
         parsed_apps_response = _cf_curl(
@@ -374,9 +377,9 @@ def _parse_json(raw_response: str) -> dict:
     try:
         parsed_response = json.loads(raw_response)
         return parsed_response
-    except Exception as e:
+    except Exception as err:
         print("\n[Error] Failed to parse:\n" + str(raw_response) + "\nas JSON.")
-        raise e
+        raise err
 
 
 def _handle_errors(parsed_response: dict) -> None:
