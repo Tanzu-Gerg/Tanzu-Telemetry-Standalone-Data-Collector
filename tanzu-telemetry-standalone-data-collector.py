@@ -90,10 +90,21 @@ class App(SimpleNamespace):
 
 
 ALERT = """
-====================================================================
- ALERT: You must target the desired environment with 'cf' CLI,
-        logged in as an admin or admin_read_only user.
-====================================================================
+================================================================================
+ You must target the desired environment with 'cf' CLI, logged in as an admin
+ or admin_read_only user.
+
+ This software participates in VMware's Customer Experience Improvement Program
+ ("CEIP"). As part of the CEIP, VMware collects technical information about
+ your organization's use of VMware products and services on a regular basis in
+ association with your organization's VMware license key(s). For additional
+ information regarding the CEIP, please see the Trust & Assurance Center at
+ http://www.vmware.com/trustvmware/ceip.html. You may join or leave VMware's
+ CEIP at any time. If you opt-in, this will be a one-time data collection and
+ if you submit the file via the submitter tool, it will be used for R&D
+ analysis in accordance with the CEIP program. To participate in this, press
+ <ENTER> to continue, otherwise press CTRL+C to exit.
+================================================================================
 """
 
 # Number of resources to fetch per page on the API
@@ -130,6 +141,9 @@ ANON_BP_VARS = environ.get("ANON_BP_VARS")
 # If set, anonymize nothing
 BYPASS_ANON = environ.get("BYPASS_ANON")
 
+# Automatically accept CEIP participation
+ACCEPT_CEIP = environ.get("ACCEPT_CEIP")
+
 
 def main():
     """Collect all visible STARTED apps, then fetch the current droplet,
@@ -137,6 +151,8 @@ def main():
     data as JSON and write to an output file in the current directory.
     """
     print(ALERT)
+    if not ACCEPT_CEIP:
+        input("Press <ENTER> to continue: ")
     all_apps = []
     try:
         all_apps = _fetch_apps(all_apps)

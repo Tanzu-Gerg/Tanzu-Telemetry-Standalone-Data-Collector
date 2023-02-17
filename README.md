@@ -130,6 +130,7 @@ Environment variables (set in the shell executing the script):
 
 |Var|Effect|
 |-|-|
+| `ACCEPT_CEIP` | If set, automatically accept VMware Customer Experience Improvement Program data collection. |
 | `ANON_BP_VARS` | If set, anonymize buildpack-related environment variables. |
 | `BYPASS_ANON` | If set, do not anonymize fields. |
 
