@@ -6,7 +6,7 @@ Buildpacks](https://buildpacks.io/)).
 
 ## Usage
 
-Usage steps are as follows:
+At a high level, usage steps are as follows:
 1. Run the collector script to gather data from a TAS foundation
 1. (Optional) Review collected data
 1. Run the submitter executable to send collected data to the TAS telemetry
@@ -19,6 +19,32 @@ This script depends on the following:
 - `cf` CLI
 - `admin` or `admin_read_only` user or client
 
+### (Optional) Running on a TAS VM
+
+For a controlled environment with the required dependencies (python and cf
+CLI), you can run the script on a TAS component VM. As an additional benefit,
+running from within the bosh deployment also reduces network latency, which can
+significantly speed up execution time.
+
+1. ssh onto an instance containing the cf CLI. For example, the
+   `control` or `clock_global` instance in TAS (instance name depends
+   on configuration): `bosh ssh clock_global`
+1. Switch to the "vcap" user: `sudo su vcap`
+1. Switch to a directory the "vcap" user has write access to. For example: `cd $HOME`
+1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
+1. Follow the "Collecting Data" and "Submitting Data" steps below
+
+#### Copying Output File from Bosh Instance
+
+Follow these steps if you would like to transfer the output file from the bosh
+instance for analysis. These steps are for your convenience, and are not
+required if you are submitting the output data directly from the bosh instance.
+
+1. Copy the output file into a directory owned by vcap. For example:
+   `cp output.json /var/vcap/data/cloud_controller_clock/tmp/`.
+1. Bosh SCP the file off of the instance. For example:
+   `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
+
 ### Collecting Data
 
 1. Target the desired TAS foundation: `cf api <target-foundation>`
@@ -26,17 +52,17 @@ This script depends on the following:
    [`admin`](https://docs.pivotal.io/application-service/3-0/uaa/uaa-user-management.html#creating-admin-users)
    or
    [`admin_read_only`](https://docs.pivotal.io/application-service/3-0/uaa/uaa-user-management.html#admin-read-only)
-   user or client
-1. Download the collector and submitter: `wget
-   https://github.com/Tanzu-Gerg/Tanzu-Telemetry-Standalone-Data-Collector/releases/download/v1.0.1/tanzu-telemetry-standalone-data-collector-v1.0.1.tgz`
-1. Extract the downloaded Tar: `tar -xf tanzu-telemetry-standalone-data-collector-v1.0.1.tgz`
+   user or client: `cf login`
+1. Download the collector and submitter: `wget https://github.com/Tanzu-Gerg/Tanzu-Telemetry-Standalone-Data-Collector/releases/download/v1.0.2/tanzu-telemetry-standalone-data-collector-1.0.2.tgz`
+1. Extract the downloaded tar: `tar -xf tanzu-telemetry-standalone-data-collector-1.0.2.tgz`
 1. `cd tanzu-telemetry-standalone-data-collector/`
 1. Run the collector script: `./tanzu-telemetry-standalone-data-collector.py`
 
-### Output
+### Collector Output
 
-Output will be in `output.json` in your current working directory. See below
-for details on what data is collected.
+Output from the collector script is written to `output.json` in your current
+working directory. See the "Collected Data" section below for details on what
+data is collected.
 
 ### Submitting Data
 
@@ -51,40 +77,10 @@ for details on what data is collected.
 1. Submit the collected data to the TAS telemetry
    system: `./<platform>/tanzu-telemetry-standalone-data-submitter --input output.json --customerId <customer-id> send`
 
-### (Optional) Running on TAS VM
+### Clean Up
 
-For a controlled environment with the required dependencies (python and cf
-CLI), you can run the script on a TAS component VM. As an additional benefit,
-running from within the bosh deployment also reduces network latency, which can
-significantly speed up execution time.
-
-1. ssh onto an instance containing the cf CLI. For example, the
-   `compute` or `clock_global` instance in TAS (instance name depends
-   on configuration): `bosh ssh clock_global`
-1. Switch to the "vcap" user: `sudo su vcap`
-1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
-1. Follow the "Collecting Data" and "Submitting Data" steps above
-
-#### Copying Output File from Bosh Instance
-1. Copy the output file into a directory owned by vcap. For example:
-  `cp output.json /var/vcap/data/cloud_controller_clock/tmp/`.
-1. Bosh SCP the file off of the instance. For example:
-   `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
-
-### Configuration
-
-Environment variables (set in the shell executing the script):
-
-|Var|Effect|
-|-|-|
-| `ACCEPT_CEIP` | If set, automatically accept VMware Customer Experience Improvement Program data collection. |
-| `ANON_BP_VARS` | If set, anonymize buildpack-related environment variables. |
-| `BYPASS_ANON` | If set, do not anonymize fields. |
-
-Usage example:
-```sh
-BYPASS_ANON=1 ./tanzu-telemetry-standalone-data-collector.py
-```
+After the data is successfully submitted to TAS telemetry, you may delete the
+output file, the collector, and the submitter. For example: `rm -r $HOME/tanzu-telemetry-standalone-data-collector*`
 
 ## Collected Data
 
@@ -189,7 +185,22 @@ Example output:
 ]
 ```
 
-## Performance
+## Collector Configuration
+
+Environment variables (set in the shell executing the collector script):
+
+|Var|Effect|
+|-|-|
+| `ACCEPT_CEIP` | If set, automatically accept VMware Customer Experience Improvement Program data collection. |
+| `ANON_BP_VARS` | If set, anonymize buildpack-related environment variables. |
+| `BYPASS_ANON` | If set, do not anonymize fields. |
+
+Usage example:
+```sh
+BYPASS_ANON=1 ./tanzu-telemetry-standalone-data-collector.py
+```
+
+## Collector Performance
 
 Performance for a trial against a deployment seeded with 10,000 apps (NOT app
 instances), when run on a bosh instance (jammy stemcell), using the procedure
@@ -199,11 +210,12 @@ described above:
 - CPU consumption: ~1.4% of 2.20GHz CPU
 - Output file size: ~8.7M
 
-## Development
+## Collector Development
 
-For testing (or running, I suppose) on Python 3.5 via the included Dockerfile (requires Docker):
+For testing (or running, I suppose) the collector script on Python 3.5 via the
+included Dockerfile (requires Docker):
 
-1. Navigate to the `buildpack-data-collector` directory
+1. Navigate to the `Tanzu-Telemetry-Standalone-Data-Collector` directory
 1. Get a Linux CF CLI in the directory. For example:
    ```
    $ wget https://packages.cloudfoundry.org/stable\?release\=linux64-binary\&version\=8.5.0\&source\=github-rel -O cf.tgz
