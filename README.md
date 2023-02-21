@@ -28,7 +28,7 @@ significantly speed up execution time.
 
 1. ssh onto an instance containing the cf CLI. For example, the
    `control` or `clock_global` instance in TAS (instance name depends
-   on configuration): `bosh ssh clock_global`
+   on configuration): `bosh ssh clock_global/0`
 1. Switch to the "vcap" user: `sudo su vcap`
 1. Switch to a directory the "vcap" user has write access to. For example: `cd $HOME`
 1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
@@ -40,10 +40,10 @@ Follow these steps if you would like to transfer the output file from the bosh
 instance for analysis. These steps are for your convenience, and are not
 required if you are submitting the output data directly from the bosh instance.
 
-1. Copy the output file into a directory owned by vcap. For example:
+1. Copy the output file into a bosh-readable directory. For example:
    `cp output.json /var/vcap/data/cloud_controller_clock/tmp/`.
 1. Bosh SCP the file off of the instance. For example:
-   `bosh scp clock_global:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
+   `bosh scp clock_global/0:/var/vcap/data/cloud_controller_clock/tmp/output.json /tmp/output.json`
 
 ### Collecting Data
 
@@ -68,8 +68,8 @@ data is collected.
 
 1. Locate your telemetry customer ID. Navigate to
    `https://<opsmanager-installation>/api/v0/deployed/products` and find the
-   `guid` for the `p-bosh` product. This is your customer ID for telemetry
-   submission.
+   `guid` for the `p-bosh` product (it should match `p-bosh-<random id>`). This
+   is your customer ID for telemetry submission.
 1. Identify what platform you are running the submission executable on. For
    example, if you are running on Linux, your platform is `linux_x86-64`.
 1. (Optional) Review what data will be submitted to the telemetry system (writes to stdout):
