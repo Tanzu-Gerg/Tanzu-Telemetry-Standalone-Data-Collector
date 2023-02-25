@@ -31,7 +31,9 @@ significantly speed up execution time.
    on configuration): `bosh ssh clock_global/0`
 1. Switch to the "vcap" user: `sudo su vcap`
 1. Switch to a directory the "vcap" user has write access to. For example: `cd $HOME`
-1. Add the cf CLI to your path: `export PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"`
+1. Add the cf CLI to your path. For example: `export
+   PATH="$PATH:/var/vcap/packages/cf-cli-8-linux/bin"` (or `cf-cli-7-linux` or
+   `cf-cli-6-linux`)
 1. Follow the "Collecting Data" and "Submitting Data" steps below
 
 #### Copying Output File from Bosh Instance
