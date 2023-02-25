@@ -185,6 +185,9 @@ Example output:
 ]
 ```
 
+To review additional documentation for what data is being collected, click
+[here](https://docs.vmware.com/en/Tanzu-Application-Service-Standalone-Data-Collection-Scripts/1.0/data-collection-scripts/standalone-data-collection-script.html).
+
 ## Collector Configuration
 
 Environment variables (set in the shell executing the collector script):
