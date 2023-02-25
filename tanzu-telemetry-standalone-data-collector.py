@@ -185,7 +185,7 @@ def _fetch_apps(all_apps: List[App]) -> List[App]:
     while True:
         print("Fetching apps page " + str(current_app_page) + "/" + str(total_app_pages), end="\r")
         parsed_apps_response = _cf_curl(
-                "/v3/apps?per_page=" + str(PAGE_SIZE) + ";page=" + str(current_app_page),
+                "/v3/apps?per_page=" + str(PAGE_SIZE) + "&page=" + str(current_app_page),
                 )
 
         _handle_errors(parsed_apps_response)
